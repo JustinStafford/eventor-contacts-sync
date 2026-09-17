@@ -20,7 +20,7 @@ from eventor_client import EventorError
 from eventor_contacts_sync import __version__
 from eventor_contacts_sync.config import ConfigError, load_config
 from eventor_contacts_sync.google import GoogleError
-from eventor_contacts_sync.report import write_report
+from eventor_contacts_sync.report import scrub, write_report
 from eventor_contacts_sync.sync import (
     SafetyGuardError,
     make_eventor_client,
@@ -134,7 +134,11 @@ def sync(
         int | None, typer.Option("--window-months", min=1, help="Override SYNC_WINDOW_MONTHS.")
     ] = None,
     redact: Annotated[
-        bool, typer.Option("--redact", help="Mask names and details in the diff and report.")
+        bool,
+        typer.Option(
+            "--redact",
+            help="No names or contact details in the diff, report or errors; Eventor IDs only.",
+        ),
     ] = False,
     quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Do not print the diff.")] = False,
     as_of: Annotated[
@@ -153,7 +157,7 @@ def sync(
         _err(f"Eventor API failure: {exc}")
         raise typer.Exit(EXIT_EVENTOR) from exc
     except GoogleError as exc:
-        _err(f"Google API failure: {exc}")
+        _err(f"Google API failure: {scrub(str(exc)) if redact else exc}")
         raise typer.Exit(EXIT_GOOGLE) from exc
     except SafetyGuardError as exc:
         _err(f"safety guard: {exc}")

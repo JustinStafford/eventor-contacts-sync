@@ -175,12 +175,39 @@ def test_cli_writes_report_and_redacts(eventor, tmp_path, monkeypatch):
     )
     assert result.exit_code == 0, result.output
     assert "Alex" not in result.output
-    assert "A. E." in result.output
+    assert "Eventor #1001" in result.output
+    assert "president" not in result.output
     report = json.loads((tmp_path / "report.json").read_text())
     assert report["mode"] == "dry-run"
     assert report["summary"]["new_contacts"] == len(report["changes"])
     assert "example.com" not in json.dumps(report)
-    assert "Alex" not in json.dumps(report)
+    dumped = json.dumps(report)
+    for leak in ("Alex", "Sample", "Compass", "0400", "+61", "president"):
+        assert leak not in dumped, leak
+        assert leak not in result.output, leak
+
+
+def test_redacted_errors_and_logs_are_scrubbed(eventor, caplog):
+    from eventor_contacts_sync.google import GoogleError
+
+    people = FakePeople()
+
+    def rejected(_persons):
+        raise GoogleError(
+            "Invalid value alex.example@example.com / +61 400 000 001", status_code=400
+        )
+
+    people.batch_create = rejected
+    people.create_contact = rejected
+    with EventorClient(AU_BASE_URL, "ev-key") as client, caplog.at_level("INFO"):
+        result = run(
+            CFG, now=NOW, apply=True, redact=True, eventor_client=client, people_client=people
+        )
+    assert not result.ok
+    text = caplog.text + result.diff_text + json.dumps(result.report)
+    for leak in ("alex.example", "400 000 001", "Alex", "president"):
+        assert leak not in text, leak
+    assert "[email]" in text and "Eventor #1001" in text
 
 
 def test_cli_reports_missing_configuration(tmp_path, monkeypatch):

@@ -3,7 +3,7 @@
 # Secret:    EVENTOR_API_KEY
 # Variables: SYNC_ENABLED=true to switch the nightly run on;
 #            GOOGLE_USER, GOOGLE_SERVICE_ACCOUNT, GCP_WORKLOAD_IDENTITY_PROVIDER (required);
-#            SYNC_REDACT, EVENTOR_BASE_URL, SYNC_WINDOW_MONTHS, SYNC_PREVIOUS_YEAR_UNTIL_MONTH,
+#            EVENTOR_BASE_URL, SYNC_WINDOW_MONTHS, SYNC_PREVIOUS_YEAR_UNTIL_MONTH,
 #            SYNC_REQUIRE_PAID, SYNC_LABEL_ALL, SYNC_LABEL_MEMBER, SYNC_LABEL_ENTRANT,
 #            SYNC_UPDATE_NAMES, SYNC_ADDRESSES, SYNC_ADOPT_EXISTING, SYNC_MAX_REMOVAL_PERCENT,
 #            SYNC_PHONE_COUNTRY_CODE (all optional)
@@ -81,14 +81,15 @@ jobs:
           APPLY: ${{ github.event_name == 'schedule' || inputs.apply == true }}
           FORCE: ${{ inputs.force == true }}
           LIMIT: ${{ inputs.limit }}
-          REDACT: ${{ vars.SYNC_REDACT == 'true' }}
         run: |
           set -euo pipefail
-          args=()
+          # Always redacted: GitHub keeps this log and the report artifact, and member
+          # names and contact details must stay in Eventor and Google only. People are
+          # identified by Eventor ID; run the tool locally to see names.
+          args=(--redact)
           if [ "$APPLY" = "true" ]; then args+=(--apply); fi
           if [ "$FORCE" = "true" ]; then args+=(--force); fi
           if [ -n "${LIMIT:-}" ]; then args+=(--limit "$LIMIT"); fi
-          if [ "$REDACT" = "true" ]; then args+=(--redact); fi
           uv run --frozen --no-dev eventor-contacts-sync sync "${args[@]}"
 
       - name: Upload run report

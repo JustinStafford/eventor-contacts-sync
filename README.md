@@ -154,7 +154,7 @@ Keyless local runs need the [gcloud CLI](https://cloud.google.com/sdk/docs/insta
 gcloud, use the workflow's dry run instead.
 
 `sync` options: `--apply`, `--limit N`, `--force`, `--report PATH`, `--config PATH`, `--window-months N`,
-`--redact` (mask names and details in the diff and report), `--quiet`, and `--no-progress`
+`--redact` (no names or contact details in the diff, report or errors; Eventor IDs only), `--quiet`, and `--no-progress`
 before the command.
 
 Exit codes: `0` success, `1` configuration problem, `2` Eventor API failure, `3` Google API
@@ -209,8 +209,11 @@ Series labels: copy [`config.example.toml`](config.example.toml) to `config.toml
 }
 ```
 
-The report and the workflow log contain names and contact details, which is why this repository
-is private. Set the variable `SYNC_REDACT` to `true` to mask them.
+**Personal data stays in Eventor and Google.** The workflow always runs with `--redact`: the log
+and the report artifact identify people by Eventor ID only, never by name, email, phone or
+address; field changes are recorded as the field name alone; and API error text is scrubbed of
+anything shaped like an email address or phone number. Progress log lines never carry names in
+any mode. To see names, run the sync locally without `--redact`; `report.json` is git-ignored.
 
 ## Development
 

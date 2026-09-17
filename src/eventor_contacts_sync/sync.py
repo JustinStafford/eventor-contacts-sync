@@ -1,4 +1,9 @@
-"""Orchestrate one run: pull from Eventor, read the contacts, plan, optionally apply."""
+"""Orchestrate one run: pull from Eventor, read the contacts, plan, optionally apply.
+
+Progress and error log lines never carry names or contact details: people are
+referred to by Eventor ID and API error text is scrubbed, because in CI the log
+is stored by GitHub.
+"""
 
 from __future__ import annotations
 
@@ -25,7 +30,7 @@ from eventor_contacts_sync.google import (
     PeopleClient,
     make_token_provider,
 )
-from eventor_contacts_sync.report import build_report, render_diff
+from eventor_contacts_sync.report import build_report, render_diff, scrub
 from eventor_contacts_sync.sources import PullResult, pull
 
 log = logging.getLogger(__name__)
@@ -102,18 +107,22 @@ def _apply_creates(
                 # No definitive answer: the batch may have gone through. Creating the
                 # contacts one by one now could duplicate all of them, so leave them
                 # for the next run, which will find any that exist by Eventor ID.
-                log.error("batch create gave no definitive answer (%s); not retrying", exc)
+                log.error(
+                    "batch create gave no definitive answer (%s); not retrying", scrub(str(exc))
+                )
                 for change in chunk:
                     change.error = f"create outcome unknown, left for the next run: {exc}"
                 continue
-            log.warning("batch create rejected (%s); creating one at a time", exc)
+            log.warning("batch create rejected (%s); creating one at a time", scrub(str(exc)))
             for change in chunk:
                 try:
                     client.create_contact(_payload(change, group_ids))
                     change.applied = True
                 except GoogleError as single:
                     change.error = str(single)
-                    log.error("failed to create %s: %s", change.name, single)
+                    log.error(
+                        "failed to create Eventor #%s: %s", change.person_id, scrub(str(single))
+                    )
             continue
         for change, person in zip(chunk, created, strict=False):
             change.resource_name = person.get("resourceName")
@@ -134,7 +143,7 @@ def _apply_update(
     except GoogleError as exc:
         if not exc.is_conflict or change.desired is None:
             raise
-        log.info("%s changed since it was read; re-reading", change.name)
+        log.info("Eventor #%s changed since it was read; re-reading", change.person_id)
         fresh = client.get_contact(change.resource_name)
         redone = plan_contact(
             change.desired,
@@ -158,13 +167,15 @@ def _apply_updates(
         try:
             client.batch_update({c.resource_name: _payload(c, group_ids) for c in chunk})  # type: ignore[misc]
         except GoogleError as exc:
-            log.warning("batch update failed (%s); updating one at a time", exc)
+            log.warning("batch update failed (%s); updating one at a time", scrub(str(exc)))
             for change in chunk:
                 try:
                     _apply_update(client, change, group_ids, plan, config)
                 except GoogleError as single:
                     change.error = str(single)
-                    log.error("failed to update %s: %s", change.name, single)
+                    log.error(
+                        "failed to update Eventor #%s: %s", change.person_id, scrub(str(single))
+                    )
             continue
         for change in chunk:
             change.applied = True
@@ -225,7 +236,7 @@ def run(
         )
         # Created after the pull: the access token lasts an hour and Eventor is slow.
         people_client = people_client or make_people_client(config)
-        log.info("reading Google contacts for %s", config.google_user)
+        log.info("reading Google contacts")
         group_ids = people_client.list_groups()
         contacts = people_client.list_contacts()
         log.info(

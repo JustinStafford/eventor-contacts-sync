@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -15,12 +16,24 @@ REPORT_VERSION = 1
 _REDACTED = "***"
 
 
-def redact_name(name: str) -> str:
-    return " ".join(part[:1] + "." for part in name.split())
+_EMAIL = re.compile(r"[^\s@<>'\"]+@[^\s@<>'\"]+")
+_DIGITS = re.compile(r"\+?\d[\d\s().-]{6,}\d")
+
+
+def scrub(text: str | None) -> str | None:
+    """Strip anything shaped like an email address or phone number from free text."""
+    if text is None:
+        return None
+    return _DIGITS.sub("[number]", _EMAIL.sub("[email]", text))
 
 
 def _name(name: str, redact: bool) -> str:
-    return redact_name(name) if redact else name
+    """Redacted output carries no part of a name; people are told apart by Eventor ID."""
+    return "[redacted]" if redact and name else name
+
+
+def _account(email: str, redact: bool) -> str:
+    return "[redacted]@" + email.partition("@")[2] if redact else email
 
 
 def _labels(labels: frozenset[str]) -> str:
@@ -51,7 +64,7 @@ def render_diff(
     lines.append(
         f"Organisation: {org.name or org.short_name} (#{org.id}) via {config.eventor_base_url}"
     )
-    lines.append(f"Google account: {config.google_user}")
+    lines.append(f"Google account: {_account(config.google_user, redact)}")
     lines.append(
         f"Members: {stats.get('memberships', 0)} from /{pull.member_source} for "
         f"{', '.join(str(y) for y in pull.membership_years)}"
@@ -77,9 +90,11 @@ def render_diff(
         lines.append("")
         lines.append(f"{title} ({len(changes)})")
         for c in changes:
-            status = "  FAILED: " + c.error if c.error else ""
+            error = scrub(c.error) if redact else c.error
+            status = f"  FAILED: {error}" if error else ""
             detail = _labels(c.labels_add) if c.action == "create" else _change_detail(c, redact)
-            lines.append(f"  {marker} {_name(c.name, redact):<28} [{detail}]{status}")
+            who = f"Eventor #{c.person_id}" if redact else c.name
+            lines.append(f"  {marker} {who:<28} [{detail}]{status}")
 
     section("New contacts", plan.by_action("create"), "+")
     section("Adopted existing contacts", plan.by_action("adopt"), "@")
@@ -94,9 +109,10 @@ def render_diff(
         for row in rows:
             extra = ""
             if row.get("contact_names"):
-                others = ", ".join(_name(n, redact) for n in row["contact_names"])
+                others = ", ".join(row["contacts"] if redact else row["contact_names"])
                 extra = f": {row.get('reason', 'matches')} as {others}"
-            lines.append(f"  ? {_name(row['name'], redact)} (Eventor #{row['person_id']}){extra}")
+            who = "" if redact else f"{row['name']} "
+            lines.append(f"  ? {who}(Eventor #{row['person_id']}){extra}")
 
     exceptions("Possible duplicates (looks like an unmanaged contact; created anyway)",
                plan.possible_duplicates)  # fmt: skip
@@ -109,7 +125,8 @@ def render_diff(
         lines.append("")
         lines.append(f"Members with no email or phone in Eventor ({len(members_missing)})")
         for p in members_missing:
-            lines.append(f"  ! {_name(p.name, redact)} (Eventor #{p.person_id})")
+            who = "" if redact else f"{p.name} "
+            lines.append(f"  ! {who}(Eventor #{p.person_id})")
     others = len(pull.no_contact) - len(members_missing)
     if others:
         lines.append("")
@@ -142,7 +159,7 @@ def _change_json(change: ContactChange, redact: bool) -> dict[str, Any]:
         "labels_add": sorted(change.labels_add),
         "labels_remove": sorted(change.labels_remove),
         "applied": change.applied,
-        "error": change.error,
+        "error": scrub(change.error) if redact else change.error,
     }
 
 
@@ -187,7 +204,7 @@ def build_report(
             "stats": pull.stats,
         },
         "google": {
-            "user": config.google_user,
+            "user": _account(config.google_user, redact),
             "managed_labels": sorted(plan.managed_labels | {config.label_all}),
         },
         "summary": plan.summary(),
