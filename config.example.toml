@@ -1,0 +1,7 @@
+# Optional: label entrants by event series. Copy to config.toml and commit it; the
+# nightly workflow picks it up automatically. It holds no secrets.
+
+[series.sprint]
+label = "NOC Sprint Series"
+event_ids = [12345, 12346]              # match by Eventor event ID (parents of multi-day events too)
+name_patterns = ["sprint series"]       # and/or case-insensitive regular expressions on the event name

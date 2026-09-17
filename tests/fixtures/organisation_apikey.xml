@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Organisation>
+  <OrganisationId>123</OrganisationId>
+  <Name>Example Orienteers</Name>
+  <ShortName>EXO</ShortName>
+  <MediaName>Example Orienteers</MediaName>
+  <OrganisationTypeId>3</OrganisationTypeId>
+  <CountryId value="36" />
+  <Address street="1 Compass Way" city="Canberra" zipCode="2600">
+    <AddressType value="official" />
+  </Address>
+  <Tele mailAddress="club@example.com" phoneNumber="+61 2 0000 0000">
+    <TeleType value="official" />
+  </Tele>
+  <ParentOrganisation>
+    <OrganisationId>2</OrganisationId>
+  </ParentOrganisation>
+  <OrganisationStatusId>1</OrganisationStatusId>
+  <CreateDate>
+    <Date>2010-01-01</Date>
+    <Clock>00:00:00</Clock>
+  </CreateDate>
+  <MemberToDate>
+    <Date>2030-12-31</Date>
+  </MemberToDate>
+  <ModifyDate>
+    <Date>2025-06-01</Date>
+    <Clock>12:00:00</Clock>
+  </ModifyDate>
+</Organisation>

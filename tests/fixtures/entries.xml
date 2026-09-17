@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<EntryList>
+  <Entry>
+    <EntryId>80001</EntryId>
+    <Competitor>
+      <CompetitorId>60001</CompetitorId>
+      <Person sex="M">
+        <PersonName>
+          <Family>Example</Family>
+          <Given sequence="1">Alex</Given>
+        </PersonName>
+        <PersonId>1001</PersonId>
+        <BirthDate>
+          <Date>1985-04-12</Date>
+        </BirthDate>
+        <Tele mailAddress="alex.example@example.com">
+          <TeleType value="official" />
+        </Tele>
+        <Nationality>
+          <CountryId value="36" />
+        </Nationality>
+        <OrganisationId>123</OrganisationId>
+      </Person>
+      <OrganisationId>123</OrganisationId>
+      <DisciplineId>1</DisciplineId>
+    </Competitor>
+    <EntryClass sequence="1">
+      <EventClassId>3001</EventClassId>
+    </EntryClass>
+    <EventRaceId>7001</EventRaceId>
+    <BibNumber>12</BibNumber>
+    <EntryDate>
+      <Date>2026-05-01</Date>
+      <Clock>09:00:00</Clock>
+    </EntryDate>
+    <CompetitorStatus value="Active" />
+    <ModifyDate>
+      <Date>2026-05-01</Date>
+      <Clock>09:00:00</Clock>
+    </ModifyDate>
+  </Entry>
+  <Entry>
+    <EntryId>80002</EntryId>
+    <Competitor>
+      <CompetitorId>60002</CompetitorId>
+      <Person sex="F">
+        <PersonName>
+          <Family>Visitor</Family>
+          <Given sequence="1">Vic</Given>
+        </PersonName>
+        <PersonId>2001</PersonId>
+        <Nationality>
+          <CountryId value="36" />
+        </Nationality>
+        <OrganisationId>456</OrganisationId>
+      </Person>
+      <OrganisationId>456</OrganisationId>
+      <DisciplineId>1</DisciplineId>
+    </Competitor>
+    <EntryClass sequence="1">
+      <EventClass>
+        <EventClassId>3002</EventClassId>
+        <Name>Moderate</Name>
+        <ClassShortName>Moderate</ClassShortName>
+      </EventClass>
+    </EntryClass>
+    <EventId>5002</EventId>
+    <EntryDate>
+      <Date>2026-06-10</Date>
+      <Clock>20:30:00</Clock>
+    </EntryDate>
+    <CompetitorStatus value="Active" />
+  </Entry>
+  <Entry>
+    <EntryId>80003</EntryId>
+    <Competitor>
+      <CompetitorId>60003</CompetitorId>
+      <Person>
+        <PersonName>
+          <Family>Guest</Family>
+          <Given>Gus</Given>
+        </PersonName>
+        <PersonId>2002</PersonId>
+        <Tele mailAddress="gus.guest@example.com" mobilePhoneNumber="0400 000 999">
+          <TeleType value="official" />
+        </Tele>
+        <Nationality>
+          <CountryId value="36" />
+        </Nationality>
+        <OrganisationId>456</OrganisationId>
+      </Person>
+      <OrganisationId>456</OrganisationId>
+      <DisciplineId>1</DisciplineId>
+    </Competitor>
+    <EntryClass sequence="1">
+      <EventClassId>3002</EventClassId>
+    </EntryClass>
+    <EventId>5002</EventId>
+    <EntryDate>
+      <Date>2026-06-11</Date>
+      <Clock>07:45:00</Clock>
+    </EntryDate>
+  </Entry>
+  <Entry>
+    <EntryId>80004</EntryId>
+    <TeamName>Relay Team A</TeamName>
+    <TeamCompetitor>
+      <TeamCompetitorId>70001</TeamCompetitorId>
+      <PersonId>1001</PersonId>
+      <OrganisationId>123</OrganisationId>
+      <TeamSequence>1</TeamSequence>
+    </TeamCompetitor>
+    <OrganisationId>123</OrganisationId>
+    <EntryClass sequence="1">
+      <EventClassId>3003</EventClassId>
+    </EntryClass>
+    <EventId>5002</EventId>
+    <EntryDate>
+      <Date>2026-06-12</Date>
+    </EntryDate>
+  </Entry>
+  <Entry>
+    <EntryId>80005</EntryId>
+    <Competitor>
+      <CompetitorId>60005</CompetitorId>
+      <Person sex="F">
+        <PersonName>
+          <Family>Sample</Family>
+          <Given sequence="1">Sam</Given>
+          <Given sequence="2">Lee</Given>
+        </PersonName>
+        <PersonId>1002</PersonId>
+        <Tele mailAddress="SAMPLE.family@example.com">
+          <TeleType value="official" />
+        </Tele>
+        <Nationality>
+          <CountryId value="36" />
+        </Nationality>
+        <OrganisationId>123</OrganisationId>
+      </Person>
+      <OrganisationId>123</OrganisationId>
+      <DisciplineId>1</DisciplineId>
+    </Competitor>
+    <EntryClass sequence="1">
+      <EventClassId>3001</EventClassId>
+    </EntryClass>
+    <EventRaceId>7001</EventRaceId>
+    <EntryDate>
+      <Date>2026-05-02</Date>
+      <Clock>12:00:00</Clock>
+    </EntryDate>
+  </Entry>
+  <Entry>
+    <EntryId>80006</EntryId>
+    <Competitor>
+      <CompetitorId>60006</CompetitorId>
+      <PersonId>1005</PersonId>
+      <OrganisationId>123</OrganisationId>
+      <DisciplineId>1</DisciplineId>
+    </Competitor>
+    <EntryClass sequence="1">
+      <EventClassId>3001</EventClassId>
+    </EntryClass>
+    <EventRaceId>7001</EventRaceId>
+    <EntryDate>
+      <Date>2026-05-03</Date>
+      <Clock>12:00:00</Clock>
+    </EntryDate>
+  </Entry>
+  <Entry>
+    <EntryId>80007</EntryId>
+    <Competitor>
+      <CompetitorId>60007</CompetitorId>
+      <Person sex="M">
+        <PersonName>
+          <Family>Unpaid</Family>
+          <Given>Pat</Given>
+        </PersonName>
+        <PersonId>1004</PersonId>
+        <Nationality>
+          <CountryId value="36" />
+        </Nationality>
+        <OrganisationId>123</OrganisationId>
+      </Person>
+      <OrganisationId>123</OrganisationId>
+      <DisciplineId>1</DisciplineId>
+    </Competitor>
+    <EntryClass sequence="1">
+      <EventClassId>3002</EventClassId>
+    </EntryClass>
+    <EventId>5002</EventId>
+    <EntryDate>
+      <Date>2026-06-13</Date>
+      <Clock>18:00:00</Clock>
+    </EntryDate>
+  </Entry>
+</EntryList>

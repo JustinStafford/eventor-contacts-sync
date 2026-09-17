@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<EventList>
+  <Event eventForm="IndSingleDay">
+    <EventId>5001</EventId>
+    <Name>Sprint Series Round 3</Name>
+    <EventClassificationId>5</EventClassificationId>
+    <EventStatusId>9</EventStatusId>
+    <DisciplineId>1</DisciplineId>
+    <StartDate>
+      <Date>2026-05-10</Date>
+      <Clock>10:00:00</Clock>
+    </StartDate>
+    <FinishDate>
+      <Date>2026-05-10</Date>
+      <Clock>13:00:00</Clock>
+    </FinishDate>
+    <Organiser>
+      <OrganisationId>123</OrganisationId>
+      <EventId>5001</EventId>
+    </Organiser>
+    <EventRace raceDistance="Sprint" raceLightCondition="Day">
+      <EventRaceId>7001</EventRaceId>
+      <EventId>5001</EventId>
+      <Name>Sprint Series Round 3</Name>
+      <RaceDate>
+        <Date>2026-05-10</Date>
+        <Clock>10:00:00</Clock>
+      </RaceDate>
+      <RaceStatusId>1</RaceStatusId>
+    </EventRace>
+    <ModifyDate>
+      <Date>2026-05-11</Date>
+      <Clock>18:00:00</Clock>
+    </ModifyDate>
+  </Event>
+  <Event eventForm="IndSingleDay">
+    <EventId>5002</EventId>
+    <Name>Bush Classic</Name>
+    <EventClassification>
+      <EventClassificationId>4</EventClassificationId>
+      <Name>Local event</Name>
+    </EventClassification>
+    <EventStatus>
+      <EventStatusId>9</EventStatusId>
+      <Name>Completed</Name>
+    </EventStatus>
+    <Discipline>
+      <DisciplineId>1</DisciplineId>
+      <Name>FootO</Name>
+    </Discipline>
+    <StartDate>
+      <Date>2026-06-14</Date>
+    </StartDate>
+    <Organiser>
+      <Organisation>
+        <OrganisationId>123</OrganisationId>
+        <Name>Example Orienteers</Name>
+        <ShortName>EXO</ShortName>
+        <OrganisationStatusId>1</OrganisationStatusId>
+        <CreateDate>
+          <Date>2010-01-01</Date>
+        </CreateDate>
+        <MemberToDate>
+          <Date>2030-12-31</Date>
+        </MemberToDate>
+      </Organisation>
+      <OrganisationId>124</OrganisationId>
+      <EventId>5002</EventId>
+    </Organiser>
+    <EventRace raceDistance="Long">
+      <EventRaceId>7002</EventRaceId>
+      <EventId>5002</EventId>
+      <Name>Bush Classic</Name>
+      <RaceDate>
+        <Date>2026-06-14</Date>
+        <Clock>09:30:00</Clock>
+      </RaceDate>
+      <RaceStatusId>1</RaceStatusId>
+    </EventRace>
+    <ParentEvent>
+      <EventId>4999</EventId>
+    </ParentEvent>
+  </Event>
+  <Event eventForm="IndSingleDay">
+    <EventId>5003</EventId>
+    <Name>Night Event (cancelled)</Name>
+    <EventClassificationId>5</EventClassificationId>
+    <EventStatusId>10</EventStatusId>
+    <StartDate>
+      <Date>2026-07-01</Date>
+      <Clock>19:00:00</Clock>
+    </StartDate>
+    <Organiser>
+      <OrganisationId>123</OrganisationId>
+      <EventId>5003</EventId>
+    </Organiser>
+  </Event>
+</EventList>

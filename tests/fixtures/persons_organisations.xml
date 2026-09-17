@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PersonList>
+  <Person sex="M">
+    <PersonName>
+      <Family>Example</Family>
+      <Given sequence="1">Alex</Given>
+    </PersonName>
+    <PersonId>1001</PersonId>
+    <BirthDate>
+      <Date>1985-04-12</Date>
+    </BirthDate>
+    <Address careOf="ACT" street="1 Compass Way" city="Canberra" zipCode="2600">
+      <AddressType value="official" />
+      <Country>
+        <CountryId value="36" />
+        <Name languageId="sv">Australien</Name>
+        <Name languageId="en">Australia</Name>
+      </Country>
+    </Address>
+    <Tele mailAddress="alex.example@example.com" mobilePhoneNumber="0400 000 001">
+      <TeleType value="official" />
+    </Tele>
+    <Nationality>
+      <CountryId value="36" />
+    </Nationality>
+    <OrganisationId>123</OrganisationId>
+    <ModifyDate>
+      <Date>2026-01-05</Date>
+      <Clock>10:15:00</Clock>
+    </ModifyDate>
+  </Person>
+  <Person sex="F">
+    <PersonName>
+      <Family>Sample</Family>
+      <Given sequence="2">Lee</Given>
+      <Given sequence="1">Sam</Given>
+    </PersonName>
+    <PersonId>1002</PersonId>
+    <BirthDate>
+      <Date>1980-01-01</Date>
+    </BirthDate>
+    <Tele phoneNumber="+61 2 0000 0002">
+      <TeleType value="private" />
+    </Tele>
+    <Tele mailAddress="sample.family@example.com">
+      <TeleType value="official" />
+    </Tele>
+    <Nationality>
+      <Country>
+        <CountryId value="36" />
+        <Alpha2 value="AU" />
+        <Alpha3 value="AUS" />
+        <Name>Australia</Name>
+      </Country>
+    </Nationality>
+    <Organisation>
+      <OrganisationId>123</OrganisationId>
+      <Name>Example Orienteers</Name>
+      <ShortName>EXO</ShortName>
+      <OrganisationStatusId>1</OrganisationStatusId>
+      <CreateDate>
+        <Date>2010-01-01</Date>
+      </CreateDate>
+      <MemberToDate>
+        <Date>2030-12-31</Date>
+      </MemberToDate>
+    </Organisation>
+    <ExternalPersonId typeId="1" id="AUS-1002" />
+  </Person>
+  <Person sex="M">
+    <PersonName>
+      <Family>Unpaid</Family>
+      <Given>Pat</Given>
+    </PersonName>
+    <PersonId>1004</PersonId>
+    <Tele mailAddress="pat.unpaid@example.com">
+      <TeleType value="official" />
+    </Tele>
+    <Nationality>
+      <CountryId value="36" />
+    </Nationality>
+    <OrganisationId>123</OrganisationId>
+  </Person>
+  <Person>
+    <PersonName>
+      <Family>Noemail</Family>
+      <Given>Kim</Given>
+    </PersonName>
+    <PersonId>1005</PersonId>
+    <Nationality>
+      <CountryId value="36" />
+    </Nationality>
+    <OrganisationId>123</OrganisationId>
+  </Person>
+</PersonList>

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<OrganisationMembershipList>
+  <OrganisationMemberships>
+    <Organisation>
+      <Id>123</Id>
+      <Name>Example Orienteers</Name>
+      <ShortName>EXO</ShortName>
+      <MediaName>Example Orienteers</MediaName>
+    </Organisation>
+    <Membership paid="true">
+      <Id>9001</Id>
+      <Year>2026</Year>
+      <Type>
+        <Id>1</Id>
+        <Name>Senior</Name>
+      </Type>
+      <Person>
+        <Id>1001</Id>
+        <FirstName>Alex</FirstName>
+        <LastName>Example</LastName>
+        <BirthDate>1985-04-12T00:00:00</BirthDate>
+        <Sex>M</Sex>
+      </Person>
+      <AppliedTime>2026-01-05T10:15:00</AppliedTime>
+      <PaidTime>2026-01-05T10:16:30</PaidTime>
+      <PhoneNumber></PhoneNumber>
+      <MobilePhoneNumber>0400 000 001</MobilePhoneNumber>
+      <Email> Alex.Example@Example.com </Email>
+    </Membership>
+    <Membership paid="true" groupMembershipId="55">
+      <Id>9002</Id>
+      <Year>2026</Year>
+      <Type groupMembership="true">
+        <Id>3</Id>
+        <Name>Family</Name>
+      </Type>
+      <Person>
+        <Id>1002</Id>
+        <FirstName>Sam</FirstName>
+        <LastName>Sample</LastName>
+        <BirthDate>1980-01-01T00:00:00</BirthDate>
+        <Sex>F</Sex>
+      </Person>
+      <AppliedTime>2026-02-01T08:00:00</AppliedTime>
+      <PaidTime>2026-02-01T08:01:00</PaidTime>
+      <PhoneNumber></PhoneNumber>
+      <MobilePhoneNumber></MobilePhoneNumber>
+      <Email>sample.family@example.com</Email>
+    </Membership>
+    <Membership paid="true" groupMembershipId="55">
+      <Id>9003</Id>
+      <Year>2026</Year>
+      <Type groupMembership="true">
+        <Id>3</Id>
+        <Name>Family</Name>
+      </Type>
+      <Person>
+        <Id>1003</Id>
+        <FirstName>Jo</FirstName>
+        <LastName>Sample</LastName>
+        <BirthDate>2015-09-30T00:00:00</BirthDate>
+        <Sex>F</Sex>
+      </Person>
+      <AppliedTime>2026-02-01T08:00:00</AppliedTime>
+      <PaidTime>2026-02-01T08:01:00</PaidTime>
+      <PhoneNumber></PhoneNumber>
+      <MobilePhoneNumber></MobilePhoneNumber>
+      <Email>sample.family@example.com</Email>
+    </Membership>
+    <Membership paid="false">
+      <Id>9004</Id>
+      <Year>2026</Year>
+      <Type>
+        <Id>1</Id>
+        <Name>Senior</Name>
+      </Type>
+      <Person>
+        <Id>1004</Id>
+        <FirstName>Pat</FirstName>
+        <LastName>Unpaid</LastName>
+      </Person>
+      <AppliedTime>2026-03-01T09:00:00</AppliedTime>
+      <PaidTime></PaidTime>
+      <PhoneNumber></PhoneNumber>
+      <MobilePhoneNumber></MobilePhoneNumber>
+      <Email>pat.unpaid@example.com</Email>
+    </Membership>
+    <Membership paid="true">
+      <Id>9005</Id>
+      <Year>2026</Year>
+      <Type>
+        <Id>2</Id>
+        <Name>Junior</Name>
+      </Type>
+      <Person>
+        <Id>1005</Id>
+        <FirstName>Kim</FirstName>
+        <LastName>Noemail</LastName>
+        <BirthDate>2012-06-15T00:00:00</BirthDate>
+        <Sex>M</Sex>
+      </Person>
+      <AppliedTime>2026-01-20T10:00:00</AppliedTime>
+      <PaidTime>2026-01-20T10:00:00</PaidTime>
+      <PhoneNumber></PhoneNumber>
+      <MobilePhoneNumber></MobilePhoneNumber>
+      <Email></Email>
+    </Membership>
+  </OrganisationMemberships>
+</OrganisationMembershipList>

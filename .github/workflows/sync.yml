@@ -1,0 +1,101 @@
+# Nightly Eventor -> Google Contacts sync. See README.md for the one-off setup.
+#
+# Secret:    EVENTOR_API_KEY
+# Variables: SYNC_ENABLED=true to switch the nightly run on;
+#            GOOGLE_USER, GOOGLE_SERVICE_ACCOUNT, GCP_WORKLOAD_IDENTITY_PROVIDER (required);
+#            SYNC_REDACT, EVENTOR_BASE_URL, SYNC_WINDOW_MONTHS, SYNC_PREVIOUS_YEAR_UNTIL_MONTH,
+#            SYNC_REQUIRE_PAID, SYNC_LABEL_ALL, SYNC_LABEL_MEMBER, SYNC_LABEL_ENTRANT,
+#            SYNC_UPDATE_NAMES, SYNC_ADDRESSES, SYNC_ADOPT_EXISTING, SYNC_MAX_REMOVAL_PERCENT,
+#            SYNC_PHONE_COUNTRY_CODE (all optional)
+# Unset variables arrive as empty strings and mean "use the default".
+
+name: Sync Google Contacts
+
+on:
+  schedule:
+    # GitHub cron is UTC only. 16:37 UTC is 02:37 AEST (03:37 during AEDT), half an hour
+    # after the Mailchimp sync so the two do not pull from Eventor at the same time.
+    - cron: "37 16 * * *"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Write changes to Google Contacts (untick for a dry run)"
+        type: boolean
+        default: false
+      limit:
+        description: "Write at most this many contacts (blank for all); use 3 for the first apply"
+        type: string
+        default: ""
+      force:
+        description: "Override the label-removal safety guard for this run"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write # for Workload Identity Federation; no Google key is stored anywhere
+
+concurrency:
+  group: eventor-contacts-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    # The nightly run writes to Google, so it stays off until you have read a dry run
+    # and set the repository variable SYNC_ENABLED to true. Manual runs always work.
+    if: github.event_name != 'schedule' || vars.SYNC_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      EVENTOR_BASE_URL: ${{ vars.EVENTOR_BASE_URL }}
+      EVENTOR_API_KEY: ${{ secrets.EVENTOR_API_KEY }}
+      GOOGLE_USER: ${{ vars.GOOGLE_USER }}
+      GOOGLE_SERVICE_ACCOUNT: ${{ vars.GOOGLE_SERVICE_ACCOUNT }}
+      SYNC_WINDOW_MONTHS: ${{ vars.SYNC_WINDOW_MONTHS }}
+      SYNC_PREVIOUS_YEAR_UNTIL_MONTH: ${{ vars.SYNC_PREVIOUS_YEAR_UNTIL_MONTH }}
+      SYNC_REQUIRE_PAID: ${{ vars.SYNC_REQUIRE_PAID }}
+      SYNC_LABEL_ALL: ${{ vars.SYNC_LABEL_ALL }}
+      SYNC_LABEL_MEMBER: ${{ vars.SYNC_LABEL_MEMBER }}
+      SYNC_LABEL_ENTRANT: ${{ vars.SYNC_LABEL_ENTRANT }}
+      SYNC_UPDATE_NAMES: ${{ vars.SYNC_UPDATE_NAMES }}
+      SYNC_ADDRESSES: ${{ vars.SYNC_ADDRESSES }}
+      SYNC_ADOPT_EXISTING: ${{ vars.SYNC_ADOPT_EXISTING }}
+      SYNC_MAX_REMOVAL_PERCENT: ${{ vars.SYNC_MAX_REMOVAL_PERCENT }}
+      SYNC_PHONE_COUNTRY_CODE: ${{ vars.SYNC_PHONE_COUNTRY_CODE }}
+      SYNC_REPORT_PATH: report.json
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (keyless)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync
+        env:
+          APPLY: ${{ github.event_name == 'schedule' || inputs.apply == true }}
+          FORCE: ${{ inputs.force == true }}
+          LIMIT: ${{ inputs.limit }}
+          REDACT: ${{ vars.SYNC_REDACT == 'true' }}
+        run: |
+          set -euo pipefail
+          args=()
+          if [ "$APPLY" = "true" ]; then args+=(--apply); fi
+          if [ "$FORCE" = "true" ]; then args+=(--force); fi
+          if [ -n "${LIMIT:-}" ]; then args+=(--limit "$LIMIT"); fi
+          if [ "$REDACT" = "true" ]; then args+=(--redact); fi
+          uv run --frozen --no-dev eventor-contacts-sync sync "${args[@]}"
+
+      - name: Upload run report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-report-${{ github.run_number }}
+          path: report.json
+          if-no-files-found: ignore
+          retention-days: 14
