@@ -3,10 +3,23 @@ name = "eventor-contacts-sync"
 version = "0.1.0"
 description = "Keep Google Contacts in sync with an orienteering club's Eventor members and event entrants."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.12"
 authors = [{ name = "Justin Stafford" }]
+keywords = ["orienteering", "eventor", "google-contacts", "people-api", "sync"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Other Audience",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Communications",
+]
 dependencies = [
-  "eventor-mailchimp-sync",
   "google-auth>=2.29",
   "httpx>=0.27",
   "python-dotenv>=1.0",
@@ -17,20 +30,22 @@ dependencies = [
 [project.scripts]
 eventor-contacts-sync = "eventor_contacts_sync.cli:main"
 
+[project.urls]
+Repository = "https://github.com/JustinStafford/eventor-contacts-sync"
+"Sibling: Mailchimp sync" = "https://github.com/JustinStafford/eventor-mailchimp-sync"
+"Eventor API spec" = "https://github.com/orienteering-oss/eventor-api-openapi-spec"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+# eventor_client is a verbatim copy of the package of the same name in eventor-mailchimp-sync,
+# kept identical so fixes can be carried across by copying the directory.
 [tool.hatch.build.targets.wheel]
-packages = ["src/eventor_contacts_sync"]
+packages = ["src/eventor_client", "src/eventor_contacts_sync"]
 
-[tool.hatch.metadata]
-allow-direct-references = true
-
-# The Eventor API client (eventor_client) ships inside eventor-mailchimp-sync; pin it to a commit
-# so the nightly sync only changes when the pin moves.
-[tool.uv.sources]
-eventor-mailchimp-sync = { git = "https://github.com/JustinStafford/eventor-mailchimp-sync", rev = "bb40004aa7ec5fa0815539bfdb194a81ee620cce" }
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "scripts", "examples", "README.md", "LICENSE", "config.example.toml", ".env.example"]
 
 [dependency-groups]
 dev = [
@@ -58,4 +73,4 @@ quote-style = "double"
 testpaths = ["tests"]
 pythonpath = ["tests"]
 addopts = "-q -p no:cacheprovider"
-filterwarnings = ["error::DeprecationWarning:eventor_contacts_sync"]
+filterwarnings = ["error::DeprecationWarning:eventor_client", "error::DeprecationWarning:eventor_contacts_sync"]

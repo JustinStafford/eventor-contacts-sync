@@ -13,7 +13,6 @@ from datetime import datetime
 from typing import Any
 
 from eventor_client import EventorClient, ResponseCache
-
 from eventor_contacts_sync.config import SyncConfig
 from eventor_contacts_sync.diff import (
     ContactChange,

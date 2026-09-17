@@ -1,16 +1,23 @@
-# Nightly Eventor -> Google Contacts sync.
+# Nightly Eventor -> Google Contacts sync for a club's PRIVATE runner repository.
 #
-# This copy lives in the PUBLIC tool repository and is gated on the repository variable
-# SYNC_ENABLED so it does nothing here. Clubs should run the sync from a private repository
-# with examples/private-runner/sync.yml instead; see examples/private-runner/README.md. If you
-# do run it from a private copy of this repository, set SYNC_ENABLED to true.
+# Copy this file to .github/workflows/sync.yml in a private repository that contains nothing
+# but this workflow and, optionally, a config.toml with event-series labels. The tool itself is
+# installed straight from the public repository at the ref in TOOL_REF, so there is no code to
+# maintain here. README.md in this directory has the one-off setup.
 #
-# Secret:    EVENTOR_API_KEY
-# Variables: GOOGLE_USER, GOOGLE_SERVICE_ACCOUNT, GCP_WORKLOAD_IDENTITY_PROVIDER (required);
-#            EVENTOR_BASE_URL, SYNC_WINDOW_MONTHS, SYNC_PREVIOUS_YEAR_UNTIL_MONTH,
-#            SYNC_REQUIRE_PAID, SYNC_LABEL_ALL, SYNC_LABEL_MEMBER, SYNC_LABEL_ENTRANT,
-#            SYNC_UPDATE_NAMES, SYNC_ADDRESSES, SYNC_ADOPT_EXISTING, SYNC_MAX_REMOVAL_PERCENT,
-#            SYNC_PHONE_COUNTRY_CODE (all optional)
+# Secret (Settings > Secrets and variables > Actions > Secrets):
+#   EVENTOR_API_KEY
+# Variables (same page > Variables):
+#   GOOGLE_USER                     the Workspace account whose contacts are synced (required)
+#   GOOGLE_SERVICE_ACCOUNT          printed by scripts/setup_gcp.sh (required)
+#   GCP_WORKLOAD_IDENTITY_PROVIDER  printed by scripts/setup_gcp.sh (required)
+#   SYNC_ENABLED                    true to switch the nightly run on; manual runs always work
+#   TOOL_REF                        tag or commit of the tool to run (default main)
+#   SYNC_REDACT                     false to allow names and contact details in logs and the
+#                                   report artifact (default: redacted, Eventor IDs only)
+#   EVENTOR_BASE_URL, SYNC_WINDOW_MONTHS, SYNC_PREVIOUS_YEAR_UNTIL_MONTH, SYNC_REQUIRE_PAID,
+#   SYNC_LABEL_ALL, SYNC_LABEL_MEMBER, SYNC_LABEL_ENTRANT, SYNC_UPDATE_NAMES, SYNC_ADDRESSES,
+#   SYNC_ADOPT_EXISTING, SYNC_MAX_REMOVAL_PERCENT, SYNC_PHONE_COUNTRY_CODE (all optional)
 # Unset variables arrive as empty strings and mean "use the default".
 
 name: Sync Google Contacts
@@ -67,7 +74,10 @@ jobs:
       SYNC_MAX_REMOVAL_PERCENT: ${{ vars.SYNC_MAX_REMOVAL_PERCENT }}
       SYNC_PHONE_COUNTRY_CODE: ${{ vars.SYNC_PHONE_COUNTRY_CODE }}
       SYNC_REPORT_PATH: report.json
+      TOOL_REPO: https://github.com/JustinStafford/eventor-contacts-sync
+      TOOL_REF: ${{ vars.TOOL_REF || 'main' }}
     steps:
+      # Only needed for config.toml; harmless otherwise.
       - uses: actions/checkout@v6
 
       - name: Authenticate to Google Cloud (keyless)
@@ -77,24 +87,25 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
 
       - name: Sync
         env:
           APPLY: ${{ github.event_name == 'schedule' || inputs.apply == true }}
           FORCE: ${{ inputs.force == true }}
           LIMIT: ${{ inputs.limit }}
+          REDACT: ${{ vars.SYNC_REDACT != 'false' }}
         run: |
           set -euo pipefail
-          # Always redacted: GitHub keeps this log and the report artifact, and member
-          # names and contact details must stay in Eventor and Google only. People are
+          # Redacted unless you opt out: GitHub keeps this log and the report artifact, and
+          # names and contact details belong in Eventor and Google only. People are
           # identified by Eventor ID; run the tool locally to see names.
-          args=(--redact)
+          args=()
+          if [ "$REDACT" = "true" ]; then args+=(--redact); fi
           if [ "$APPLY" = "true" ]; then args+=(--apply); fi
           if [ "$FORCE" = "true" ]; then args+=(--force); fi
           if [ -n "${LIMIT:-}" ]; then args+=(--limit "$LIMIT"); fi
-          uv run --frozen --no-dev eventor-contacts-sync sync "${args[@]}"
+          if [ -f config.toml ]; then args+=(--config config.toml); fi
+          uvx --from "git+${TOOL_REPO}@${TOOL_REF}" eventor-contacts-sync sync "${args[@]}"
 
       - name: Upload run report
         if: always()

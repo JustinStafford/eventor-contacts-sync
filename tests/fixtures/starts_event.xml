@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<StartList>
+  <EventId>5001</EventId>
+  <ClassStart numberOfEntries="3">
+    <EventClass>
+      <EventClassId>3001</EventClassId>
+      <Name>Hard</Name>
+      <ClassShortName>Hard</ClassShortName>
+    </EventClass>
+    <PersonStart>
+      <Person sex="M">
+        <PersonName>
+          <Family>Example</Family>
+          <Given sequence="1">Alex</Given>
+        </PersonName>
+        <PersonId>1001</PersonId>
+        <Nationality>
+          <CountryId value="36" />
+        </Nationality>
+        <OrganisationId>123</OrganisationId>
+      </Person>
+      <OrganisationId>123</OrganisationId>
+      <Start>
+        <StartNumber>1</StartNumber>
+        <BibNumber>12</BibNumber>
+        <CCardId>123456</CCardId>
+        <StartTime>
+          <Date>2026-05-10</Date>
+          <Clock>10:02:00</Clock>
+        </StartTime>
+        <CourseLength>2500</CourseLength>
+        <StartId>90001</StartId>
+      </Start>
+    </PersonStart>
+    <PersonStart>
+      <PersonId>3001</PersonId>
+      <Start>
+        <StartNumber>2</StartNumber>
+        <CCard>
+          <CCardId>654321</CCardId>
+          <PunchingUnitType value="SI" />
+        </CCard>
+        <StartTime>
+          <Clock>10:04:00</Clock>
+        </StartTime>
+        <CourseLength>2500</CourseLength>
+      </Start>
+    </PersonStart>
+    <PersonStart>
+      <Person>
+        <PersonName>
+          <Family>Walkup</Family>
+          <Given>Wendy</Given>
+        </PersonName>
+        <Nationality>
+          <CountryId value="36" />
+        </Nationality>
+      </Person>
+      <Start>
+        <CourseLength>2500</CourseLength>
+      </Start>
+    </PersonStart>
+  </ClassStart>
+  <ModifyDate>
+    <Date>2026-05-09</Date>
+    <Clock>17:00:00</Clock>
+  </ModifyDate>
+</StartList>

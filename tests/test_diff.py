@@ -8,12 +8,12 @@ from eventor_contacts_sync.sources import Address, DesiredPerson
 from helpers import ENV, contact
 
 CFG = load_config(ENV)
-MANAGED = frozenset({"NOC Member", "NOC Member 2026", "NOC Entrant"})
+MANAGED = frozenset({"Member", "Member 2026", "Entrant"})
 GROUPS = {
     "contactGroups/all": "Eventor",
-    "contactGroups/m": "NOC Member",
-    "contactGroups/m26": "NOC Member 2026",
-    "contactGroups/e": "NOC Entrant",
+    "contactGroups/m": "Member",
+    "contactGroups/m26": "Member 2026",
+    "contactGroups/e": "Entrant",
     "contactGroups/own": "Committee",
 }
 GROUP_IDS = {name: resource for resource, name in GROUPS.items()}
@@ -23,7 +23,7 @@ def person(pid=1001, given="Alex", family="Example", **kwargs) -> DesiredPerson:
     defaults = {
         "email": "alex@example.com",
         "mobile": "+61400000001",
-        "labels": frozenset({"Eventor", "NOC Member", "NOC Member 2026"}),
+        "labels": frozenset({"Eventor", "Member", "Member 2026"}),
         "is_member": True,
     }
     return DesiredPerson(pid, given, family, **{**defaults, **kwargs})
@@ -128,8 +128,8 @@ def test_labels_added_and_only_managed_labels_removed():
         memberships=member_of("contactGroups/myContacts", "contactGroups/e", "contactGroups/own"),
     )
     (change,) = plan_for([person()], [existing]).changes
-    assert change.labels_add == {"Eventor", "NOC Member", "NOC Member 2026"}
-    assert change.labels_remove == {"NOC Entrant"}
+    assert change.labels_add == {"Eventor", "Member", "Member 2026"}
+    assert change.labels_remove == {"Entrant"}
     resources = {
         m["contactGroupMembership"]["contactGroupResourceName"]
         for m in memberships_for(change, GROUP_IDS)
@@ -216,7 +216,7 @@ def test_lapsed_contact_loses_managed_labels_only_and_unmanaged_contacts_are_ign
     plan = plan_for([], [lapsed, friend])
     (change,) = plan.changes
     assert change.resource_name == "people/c9"
-    assert change.labels_remove == {"NOC Member"}  # 'Eventor' and 'Committee' stay
+    assert change.labels_remove == {"Member"}  # 'Eventor' and 'Committee' stay
     assert plan.lapsed == [change]
 
 

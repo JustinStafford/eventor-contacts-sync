@@ -7,8 +7,8 @@ from datetime import date, datetime
 import httpx
 import pytest
 import respx
-from eventor_client import AU_BASE_URL, EventorClient
 
+from eventor_client import AU_BASE_URL, EventorClient
 from eventor_contacts_sync.config import load_config
 from eventor_contacts_sync.sources import (
     Address,
@@ -50,10 +50,10 @@ def test_membership_years_and_window():
 def test_managed_labels_exclude_the_permanent_label():
     cfg = load_config(ENV)
     assert managed_labels(cfg, (2026, 2025)) == {
-        "NOC Member",
-        "NOC Member 2026",
-        "NOC Member 2025",
-        "NOC Entrant",
+        "Member",
+        "Member 2026",
+        "Member 2025",
+        "Entrant",
     }
 
 
@@ -81,7 +81,7 @@ def test_pull_builds_one_contact_per_person(eventor_routes):
     assert alex.email == "alex.example@example.com"
     assert alex.mobile == "+61400000001"
     assert alex.is_member
-    assert {"Eventor", "NOC Member", "NOC Member 2026", "NOC Entrant"} <= alex.labels
+    assert {"Eventor", "Member", "Member 2026", "Entrant"} <= alex.labels
     # /memberships has no address; it comes from /persons, with the AU state from careOf.
     assert alex.address == Address("1 Compass Way", "Canberra", "ACT", "2600", "Australia")
 
@@ -90,8 +90,8 @@ def test_pull_builds_one_contact_per_person(eventor_routes):
     # Unpaid membership: not a member, but still attached to the club and an entrant.
     assert 1004 in people
     assert not people[1004].is_member
-    assert "NOC Member" not in people[1004].labels
-    assert "NOC Entrant" in people[1004].labels
+    assert "Member" not in people[1004].labels
+    assert "Entrant" in people[1004].labels
     # Entrants from other clubs have no contact details and are only reported.
     assert 2001 not in people
     assert {p.person_id for p in result.no_contact} >= {2001, 2002}

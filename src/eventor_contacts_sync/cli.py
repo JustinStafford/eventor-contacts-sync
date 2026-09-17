@@ -15,8 +15,8 @@ from typing import Annotated
 
 import typer
 from dotenv import load_dotenv
-from eventor_client import EventorError
 
+from eventor_client import EventorError
 from eventor_contacts_sync import __version__
 from eventor_contacts_sync.config import ConfigError, load_config
 from eventor_contacts_sync.google import GoogleError

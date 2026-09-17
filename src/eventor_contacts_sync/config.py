@@ -55,8 +55,8 @@ class SyncConfig:
     previous_year_until_month: int = 3
     require_paid: bool = True
     label_all: str = "Eventor"
-    label_member: str = "NOC Member"
-    label_entrant: str = "NOC Entrant"
+    label_member: str = "Member"
+    label_entrant: str = "Entrant"
     update_names: bool = True
     sync_addresses: bool = True
     adopt_existing: bool = True
@@ -221,8 +221,8 @@ def load_config(
         previous_year_until_month=previous_until,
         require_paid=_bool(env.get("SYNC_REQUIRE_PAID"), True),
         label_all=_str(env, "SYNC_LABEL_ALL", "Eventor"),
-        label_member=_str(env, "SYNC_LABEL_MEMBER", "NOC Member"),
-        label_entrant=_str(env, "SYNC_LABEL_ENTRANT", "NOC Entrant"),
+        label_member=_str(env, "SYNC_LABEL_MEMBER", "Member"),
+        label_entrant=_str(env, "SYNC_LABEL_ENTRANT", "Entrant"),
         update_names=_bool(env.get("SYNC_UPDATE_NAMES"), True),
         sync_addresses=_bool(env.get("SYNC_ADDRESSES"), True),
         adopt_existing=_bool(env.get("SYNC_ADOPT_EXISTING"), True),

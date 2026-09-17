@@ -8,9 +8,9 @@ from datetime import datetime
 import httpx
 import pytest
 import respx
-from eventor_client import AU_BASE_URL, EventorClient
 from typer.testing import CliRunner
 
+from eventor_client import AU_BASE_URL, EventorClient
 from eventor_contacts_sync import cli
 from eventor_contacts_sync.config import load_config
 from eventor_contacts_sync.sync import SafetyGuardError, run
@@ -56,7 +56,7 @@ def test_apply_then_second_run_is_a_no_op(eventor):
     assert first.ok
     created = first.plan.summary()["new_contacts"]
     assert len(people.contacts) == created
-    assert {"Eventor", "NOC Member", "NOC Member 2026", "NOC Entrant"} <= set(people.groups)
+    assert {"Eventor", "Member", "Member 2026", "Entrant"} <= set(people.groups)
     assert people.calls.count("batch_create") == 1
     assert all(c.applied for c in first.plan.changes if c.has_writes)
 
@@ -135,7 +135,7 @@ def test_stale_etag_is_re_read_and_retried(eventor):
 
 
 def test_guard_refuses_mass_label_removal_unless_forced(eventor, fixture_bytes):
-    groups = {"NOC Member": "contactGroups/m", "Eventor": "contactGroups/all"}
+    groups = {"Member": "contactGroups/m", "Eventor": "contactGroups/all"}
     members = [
         contact(
             f"people/c{i}",

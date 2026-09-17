@@ -52,13 +52,13 @@ def test_list_groups_ignores_system_groups(client):
                 "contactGroups": [
                     {"resourceName": "contactGroups/myContacts", "name": "myContacts",
                      "groupType": "SYSTEM_CONTACT_GROUP"},
-                    {"resourceName": "contactGroups/g1", "name": "NOC Member",
+                    {"resourceName": "contactGroups/g1", "name": "Member",
                      "groupType": "USER_CONTACT_GROUP"},
                 ]
             },
         )
     )  # fmt: skip
-    assert client.list_groups() == {"NOC Member": "contactGroups/g1"}
+    assert client.list_groups() == {"Member": "contactGroups/g1"}
 
 
 @respx.mock

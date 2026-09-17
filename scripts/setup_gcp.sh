@@ -3,7 +3,7 @@
 # projects in your Workspace organisation. The easiest place is Cloud Shell
 # (https://shell.cloud.google.com), where gcloud is already installed and signed in.
 #
-#   PROJECT_ID=noc-contacts-sync GITHUB_REPO=JustinStafford/eventor-contacts-sync \
+#   PROJECT_ID=yourclub-contacts-sync GITHUB_REPO=you/yourclub-contacts-sync \
 #     bash setup_gcp.sh
 #
 # It creates no keys. GitHub Actions proves its identity with a short-lived OIDC token

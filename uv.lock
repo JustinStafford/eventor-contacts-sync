@@ -317,7 +317,6 @@ name = "eventor-contacts-sync"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "eventor-mailchimp-sync" },
     { name = "google-auth" },
     { name = "httpx" },
     { name = "python-dotenv" },
@@ -334,7 +333,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "eventor-mailchimp-sync", git = "https://github.com/JustinStafford/eventor-mailchimp-sync?rev=bb40004aa7ec5fa0815539bfdb194a81ee620cce" },
     { name = "google-auth", specifier = ">=2.29" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "python-dotenv", specifier = ">=1.0" },
@@ -347,16 +345,6 @@ dev = [
     { name = "pytest", specifier = ">=8" },
     { name = "respx", specifier = ">=0.21" },
     { name = "ruff", specifier = ">=0.6" },
-]
-
-[[package]]
-name = "eventor-mailchimp-sync"
-version = "0.1.0"
-source = { git = "https://github.com/JustinStafford/eventor-mailchimp-sync?rev=bb40004aa7ec5fa0815539bfdb194a81ee620cce#bb40004aa7ec5fa0815539bfdb194a81ee620cce" }
-dependencies = [
-    { name = "httpx" },
-    { name = "python-dotenv" },
-    { name = "typer" },
 ]
 
 [[package]]

@@ -1,6 +1,6 @@
 """Pull the *desired* set of contacts from Eventor.
 
-Modelled on ``eventor_mailchimp_sync.sources``: every run does a full pull of
+Like its sibling eventor-mailchimp-sync: every run does a full pull of
 current-year memberships (plus last year's early in the year) and everyone who
 entered one of the club's events in a trailing window. The difference is the
 unit: Mailchimp is keyed on email, Google Contacts on the person, so the result
@@ -25,7 +25,6 @@ from eventor_client import EventorClient, EventorHTTPError, EventorParseError
 from eventor_client._xml import attr, child, children
 from eventor_client.models import Event, Organisation, Person
 from eventor_client.parsing import parse_person
-
 from eventor_contacts_sync.config import SyncConfig
 
 log = logging.getLogger(__name__)
