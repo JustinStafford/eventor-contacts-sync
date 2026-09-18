@@ -77,7 +77,12 @@ def check_guard(plan: Plan, pulled: PullResult, config: SyncConfig, labelled: in
     """
     if not pulled.people or pulled.stats.get("members", 0) == 0:
         raise SafetyGuardError("Eventor returned no members; refusing to write anything")
-    losing = sum(1 for c in plan.changes if config.label_member in c.labels_remove)
+    # Dependant stubs lose the member label by design, not because of a bad response.
+    losing = sum(
+        1
+        for c in plan.changes
+        if config.label_member in c.labels_remove and c.action != "dependant"
+    )
     if losing >= GUARD_MINIMUM and losing > labelled * config.max_removal_fraction:
         raise SafetyGuardError(
             f"{losing} of {labelled} contacts would lose the '{config.label_member}' label, more "
@@ -199,7 +204,7 @@ def apply_plan(
             log.info("creating label %r", name)
             group_ids[name] = client.create_group(name)
     creates = [c for c in writes if c.action == "create"]
-    updates = [c for c in writes if c.action in ("adopt", "update")]
+    updates = [c for c in writes if c.action in ("adopt", "update", "dependant")]
     log.info("creating %d contacts, updating %d", len(creates), len(updates))
     _apply_creates(client, creates, group_ids)
     _apply_updates(client, updates, group_ids, plan, config)
@@ -248,6 +253,7 @@ def run(
             group_names=group_names,
             managed_labels=pulled.managed_labels,
             config=config,
+            dependant_ids=frozenset(d.person_id for d in pulled.dependants),
         )
         if apply:
             if not force:

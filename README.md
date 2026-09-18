@@ -54,7 +54,8 @@ database, nothing to get out of step. Run it twice and the second run does nothi
    says who entered.
 5. One desired contact is built **per Eventor person** who is a current member or an entrant *and*
    has an email or phone number. `/entries` carries no contact details, so entrants from other
-   clubs can only be counted and listed in the report.
+   clubs can only be counted and listed in the report. Each email address and phone number then
+   goes on **one** contact only (see *one owner per detail* below).
 6. The account's contacts and labels are read through the
    [People API](https://developers.google.com/people/v1/contacts), the diff is printed and written
    to `report.json`, and with `--apply` the changes are written in batches of up to 200, strictly
@@ -73,8 +74,8 @@ database, nothing to get out of step. Run it twice and the second run does nothi
 | `clientData` `eventor:*` | the values last written | lets the sync replace *its* entry only |
 
 Labels: `Eventor` on everyone the sync manages (never removed), `Member`, `Member YYYY` per
-synced year, `Entrant`, plus any series labels from `config.toml`. The last four are **managed
-labels**: they are removed when the person no longer qualifies. Membership lapse is a label
+synced year, `Entrant`, `Dependant`, plus any series labels from `config.toml`. All but the
+first are **managed labels**: they are removed when the person no longer qualifies. Membership lapse is a label
 removal, never a delete. Old `Member YYYY` labels for years no longer synced are left as history.
 The label names are configurable (`SYNC_LABEL_MEMBER`, `SYNC_LABEL_ENTRANT`), for example
 `Club Member` and `Club Entrant`; the sync finds labels by name, so renaming a label in Google
@@ -83,7 +84,18 @@ Contacts and changing the variable together keeps every membership.
 ## The rules that keep your address book safe
 
 - **Matching is by Eventor person ID**, stored on the contact. A changed name or email in Eventor
-  is an update, never a duplicate. A family sharing one email address is one contact each.
+  is an update, never a duplicate.
+- **One owner per detail.** Parents routinely register children with their own email and mobile.
+  A number that sits on two cards makes a phone's messaging app pick one of them at random, so
+  every shared email address or phone number is given to one person: a current member before a
+  non-member, then the oldest by birth date, then the lowest Eventor ID (the rule the Mailchimp
+  sibling uses). The others have that value *withheld*: the entry the sync wrote is removed from
+  their contact, anything you added by hand stays. Someone left with no detail of their own is a
+  **dependant**: no contact is made for them and they are listed in the report against the
+  owner. If a contact already exists for a dependant, it is stripped of the sync-written details,
+  the managed labels come off and the `Dependant` label goes on (`SYNC_LABEL_DEPENDANT`), so you
+  can open that label in Google Contacts and delete the stubs in one go. A dependant who later
+  gets their own mobile becomes a contact again.
 - **Adoption.** A contact you made by hand is adopted (stamped with the Eventor ID and from then
   on managed) only if its name matches *and* it shares an email or phone number with the Eventor
   person. Same name but no shared detail: a new contact is created and the pair is listed under
@@ -93,7 +105,8 @@ Contacts and changing the variable together keeps every membership.
 - **Field ownership.** The sync only replaces the email, phone or address entry it wrote last
   time; if Eventor's value is already on the contact nothing changes; otherwise it is added
   alongside. Your own extra numbers, addresses, notes, photos, birthdays and labels are never
-  modified, and a value missing from Eventor never blanks anything.
+  modified, and a value missing from Eventor never blanks anything (only a value *withheld*
+  because it belongs to someone else is withdrawn, and only the sync's own entry).
 - **No deletes.** The People API client has no delete method. Creates are never retried blindly
   (a timed-out create may have succeeded; the next run finds it by ID).
 - **Safety guard.** `--apply` refuses to run (exit code 4) if Eventor returned no members, or if
@@ -235,6 +248,7 @@ All environment variables; `.env` is loaded automatically. An empty value means 
 | `SYNC_LABEL_ALL` | `Eventor` | Permanent label on every managed contact |
 | `SYNC_LABEL_MEMBER` | `Member` | Member label; the year label is this plus the year |
 | `SYNC_LABEL_ENTRANT` | `Entrant` | Entrant label |
+| `SYNC_LABEL_DEPENDANT` | `Dependant` | Label on the stub contact of someone whose every detail belongs to another person |
 | `SYNC_UPDATE_NAMES` | `true` | Update names from Eventor |
 | `SYNC_ADDRESSES` | `true` | Sync postal addresses |
 | `SYNC_ADOPT_EXISTING` | `true` | Adopt matching hand-made contacts |
@@ -259,11 +273,13 @@ name_patterns = ["sprint series"]       # and/or case-insensitive regular expres
   "ok": true, "mode": "dry-run",
   "eventor": { "organisation_id": 123, "membership_years": [2026], "stats": {...} },
   "google": { "user": "president@example.org", "managed_labels": [...] },
-  "summary": { "new_contacts": 4, "adopted_contacts": 1, "updated_contacts": 12, "lapsed_contacts": 2, ... },
-  "changes": [ { "person_id": 1001, "name": "...", "action": "create|adopt|update|lapse",
+  "summary": { "new_contacts": 4, "adopted_contacts": 1, "updated_contacts": 12, "lapsed_contacts": 2,
+               "dependant_contacts": 1, ... },
+  "changes": [ { "person_id": 1001, "name": "...", "action": "create|adopt|update|lapse|dependant",
                  "fields": { "email": { "old": "...", "new": "..." } },
                  "labels_add": [...], "labels_remove": [...], "applied": true, "error": null } ],
   "exceptions": {
+    "dependants": [...],             // every detail belongs to another person (owner_id, owner_name)
     "no_contact_details": [...],     // members without email/phone, and entrants from other clubs
     "possible_duplicates": [...],    // created, but an unmanaged contact has the same name
     "ambiguous_matches": [...],      // skipped: several unmanaged contacts match

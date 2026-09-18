@@ -217,3 +217,42 @@ def test_cli_reports_missing_configuration(tmp_path, monkeypatch):
     result = CliRunner().invoke(cli.app, ["sync"])
     assert result.exit_code == cli.EXIT_CONFIG
     assert "GOOGLE_USER" in result.output
+
+
+def test_dependant_stub_from_an_earlier_sync_is_cleaned_up_and_the_guard_ignores_it(eventor):
+    # A contact an earlier version made for the child (Eventor #1003) with the parent's email.
+    from helpers import contact as make_contact
+
+    def member_of(*resources):
+        return [{"contactGroupMembership": {"contactGroupResourceName": r}} for r in resources]
+
+    groups = {"Eventor": "contactGroups/all", "Member": "contactGroups/m"}
+    child = make_contact(
+        "people/child",
+        "Jo",
+        "Sample",
+        externalIds=[{"type": "eventor", "value": "1003"}],
+        emailAddresses=[{"value": "sample.family@example.com", "type": "home"}],
+        clientData=[{"key": "eventor:email", "value": "sample.family@example.com"}],
+        memberships=member_of("contactGroups/all", "contactGroups/m"),
+    )
+    people = FakePeople([child], groups)
+    result = sync(people, apply=True)
+    assert result.ok
+    (stub,) = result.plan.by_action("dependant")
+    assert stub.person_id == 1003
+    assert stub.field_changes == {"email": ("sample.family@example.com", None)}
+    assert "Dependants" in result.diff_text
+    assert "Jo Sample (Eventor #1003) -> Sam Sample (Eventor #1002)" in result.diff_text
+    assert result.report["exceptions"]["dependants"][0]["owner_id"] == 1002
+    assert result.report["summary"]["dependant_contacts"] == 1
+    stored = people.contacts["people/child"]
+    assert stored["emailAddresses"] == []
+    labels = {
+        m["contactGroupMembership"]["contactGroupResourceName"] for m in stored["memberships"]
+    }
+    assert labels == {"contactGroups/all", people.groups["Dependant"]}
+    # Second run: nothing to do.
+    again = sync(people, apply=True)
+    assert again.plan.summary()["dependant_contacts"] == 0
+    assert not any(c.person_id == 1003 for c in again.plan.changes if c.has_writes)

@@ -16,7 +16,7 @@
 #   SYNC_REDACT                     false to allow names and contact details in logs and the
 #                                   report artifact (default: redacted, Eventor IDs only)
 #   EVENTOR_BASE_URL, SYNC_WINDOW_MONTHS, SYNC_PREVIOUS_YEAR_UNTIL_MONTH, SYNC_REQUIRE_PAID,
-#   SYNC_LABEL_ALL, SYNC_LABEL_MEMBER, SYNC_LABEL_ENTRANT, SYNC_UPDATE_NAMES, SYNC_ADDRESSES,
+#   SYNC_LABEL_ALL, SYNC_LABEL_MEMBER, SYNC_LABEL_ENTRANT, SYNC_LABEL_DEPENDANT, SYNC_UPDATE_NAMES, SYNC_ADDRESSES,
 #   SYNC_ADOPT_EXISTING, SYNC_MAX_REMOVAL_PERCENT, SYNC_PHONE_COUNTRY_CODE (all optional)
 # Unset variables arrive as empty strings and mean "use the default".
 
@@ -68,6 +68,7 @@ jobs:
       SYNC_LABEL_ALL: ${{ vars.SYNC_LABEL_ALL }}
       SYNC_LABEL_MEMBER: ${{ vars.SYNC_LABEL_MEMBER }}
       SYNC_LABEL_ENTRANT: ${{ vars.SYNC_LABEL_ENTRANT }}
+      SYNC_LABEL_DEPENDANT: ${{ vars.SYNC_LABEL_DEPENDANT }}
       SYNC_UPDATE_NAMES: ${{ vars.SYNC_UPDATE_NAMES }}
       SYNC_ADDRESSES: ${{ vars.SYNC_ADDRESSES }}
       SYNC_ADOPT_EXISTING: ${{ vars.SYNC_ADOPT_EXISTING }}

@@ -7,6 +7,15 @@ unit: Mailchimp is keyed on email, Google Contacts on the person, so the result
 is one :class:`DesiredPerson` per Eventor person ID and a family sharing an
 address becomes several contacts.
 
+Each email address and phone number, though, goes on **one** contact only. A
+handle that sits on two cards makes the phone's messaging app pick one of them
+at random, and families routinely register the children with a parent's email
+and mobile. So after everyone is collected, every shared value is assigned to
+one *owner* (a current member before a non-member, then the oldest, then the
+lowest person ID, the rule the Mailchimp sibling uses) and withheld from the
+others. Someone left with no detail of their own is a :class:`Dependant`: no
+contact is made for them and they are listed in the report.
+
 ``/entries`` carries no contact details and ``/memberships`` carries no postal
 address, so ``/persons/organisations`` (everyone attached to the club, lapsed
 members included) is always fetched as the contact-detail index.
@@ -95,6 +104,7 @@ def managed_labels(config: SyncConfig, years: Iterable[int]) -> frozenset[str]:
     labels = {member_label_for_year(config, y) for y in years}
     labels.add(config.label_member)
     labels.add(config.label_entrant)
+    labels.add(config.label_dependant)
     labels.update(rule.label for rule in config.series)
     return frozenset(labels)
 
@@ -145,10 +155,25 @@ class DesiredPerson:
     membership_years: frozenset[int] = frozenset()
     is_member: bool = False
     sources: tuple[str, ...] = ()
+    # Slots ("email", "mobile", "phone") whose Eventor value belongs to another
+    # person's contact; the sync removes its own entry for them if it wrote one.
+    withheld: frozenset[str] = frozenset()
 
     @property
     def name(self) -> str:
         return f"{self.given_name} {self.family_name}".strip()
+
+
+@dataclass(frozen=True, slots=True)
+class Dependant:
+    """Someone whose every contact detail belongs to another person's contact."""
+
+    person_id: int
+    name: str
+    owner_id: int
+    owner_name: str
+    is_member: bool
+    sources: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -168,6 +193,7 @@ class PullResult:
     window_end: datetime
     events: list[Event]
     people: list[DesiredPerson]
+    dependants: list[Dependant]
     no_contact: list[NoContactPerson]
     managed_labels: frozenset[str]
     stats: dict[str, int] = field(default_factory=dict)
@@ -233,10 +259,15 @@ class _Builder:
     mobile: str | None = None
     phone: str | None = None
     address: Address | None = None
+    birth_date: date | None = None
     labels: set[str] = field(default_factory=set)
     years: set[int] = field(default_factory=set)
     is_member: bool = False
     sources: list[str] = field(default_factory=list)
+
+    @property
+    def name(self) -> str:
+        return f"{self.given_name} {self.family_name}".strip()
 
     def see(self, source: str) -> None:
         if source not in self.sources:
@@ -253,6 +284,70 @@ class _Builder:
         self.mobile = self.mobile or p.mobile
         self.phone = self.phone or p.phone
         self.address = self.address or details.address
+        self.birth_date = self.birth_date or p.birth_date
+
+
+@dataclass(slots=True)
+class _Candidate:
+    """A person's normalised details before shared values are assigned an owner."""
+
+    builder: _Builder
+    email: str | None
+    mobile: str | None
+    phone: str | None
+    withheld: set[str] = field(default_factory=set)
+
+    @property
+    def has_detail(self) -> bool:
+        return bool(self.email or self.mobile or self.phone)
+
+
+_SLOTS = ("email", "mobile", "phone")
+
+
+def _value_key(slot: str, value: str) -> str:
+    # Mobile and other phone share a key space: a number is a number whichever slot holds it.
+    return f"{'e' if slot == 'email' else 'p'}:{value}"
+
+
+def assign_owners(candidates: list[_Candidate]) -> dict[int, int]:
+    """Give each shared email or phone number to one person and withhold it from the rest.
+
+    Mutates the candidates (a withheld slot becomes ``None`` and is recorded in
+    ``withheld``) and returns ``{person_id: owner_id}`` for everyone left with no
+    detail of their own. The owner of a value is the first by (current member,
+    oldest birth date, lowest person ID). Values are compared after
+    normalisation, so ``0412 345 678`` and ``+61412345678`` are the same number.
+    """
+
+    def rank(c: _Candidate) -> tuple[bool, date, int]:
+        b = c.builder
+        return (not b.is_member, b.birth_date or date.max, b.person_id)
+
+    holders: dict[str, dict[int, _Candidate]] = {}
+    for c in candidates:
+        for slot in _SLOTS:
+            value = getattr(c, slot)
+            if value:
+                holders.setdefault(_value_key(slot, value), {})[c.builder.person_id] = c
+    owner_of: dict[str, _Candidate] = {
+        key: min(group.values(), key=rank) for key, group in holders.items() if len(group) > 1
+    }
+    dependants: dict[int, int] = {}
+    for c in candidates:
+        lost_to: list[int] = []
+        for slot in _SLOTS:
+            value = getattr(c, slot)
+            if not value:
+                continue
+            owner = owner_of.get(_value_key(slot, value))
+            if owner is not None and owner is not c:
+                setattr(c, slot, None)
+                c.withheld.add(slot)
+                lost_to.append(owner.builder.person_id)
+        if lost_to and not c.has_detail:
+            dependants[c.builder.person_id] = lost_to[0]
+    return dependants
 
 
 def _chunks(values: list[int], size: int) -> Iterable[list[int]]:
@@ -303,6 +398,7 @@ def pull(client: EventorClient, config: SyncConfig, now: datetime | None = None)
                 b.email = b.email or m.email
                 b.mobile = b.mobile or m.mobile
                 b.phone = b.phone or m.phone
+                b.birth_date = b.birth_date or m.person.birth_date
                 b.is_member = True
                 b.years.add(m.year)
                 b.labels |= {config.label_member, member_label_for_year(config, m.year)}
@@ -391,6 +487,7 @@ def pull(client: EventorClient, config: SyncConfig, now: datetime | None = None)
 
     people: list[DesiredPerson] = []
     no_contact = list(unknown.values())
+    candidates: list[_Candidate] = []
     for pid in sorted(builders):
         b = builders[pid]
         b.fill(details.get(pid))
@@ -399,30 +496,52 @@ def pull(client: EventorClient, config: SyncConfig, now: datetime | None = None)
         phone = normalise_phone(b.phone, config.phone_country_code)
         if phone == mobile:
             phone = None
-        name = f"{b.given_name} {b.family_name}".strip()
-        if not name or not (email or mobile or phone):
-            no_contact.append(NoContactPerson(pid, name, tuple(b.sources), b.is_member))
+        if not b.name or not (email or mobile or phone):
+            no_contact.append(NoContactPerson(pid, b.name, tuple(b.sources), b.is_member))
+            continue
+        candidates.append(_Candidate(b, email, mobile, phone))
+
+    owners = assign_owners(candidates)
+    dependants: list[Dependant] = []
+    for c in candidates:
+        b = c.builder
+        if b.person_id in owners:
+            owner = builders[owners[b.person_id]]
+            dependants.append(
+                Dependant(
+                    person_id=b.person_id,
+                    name=b.name,
+                    owner_id=owner.person_id,
+                    owner_name=owner.name,
+                    is_member=b.is_member,
+                    sources=tuple(b.sources),
+                )
+            )
             continue
         people.append(
             DesiredPerson(
-                person_id=pid,
+                person_id=b.person_id,
                 given_name=b.given_name.strip(),
                 family_name=b.family_name.strip(),
-                email=email,
-                mobile=mobile,
-                phone=phone,
+                email=c.email,
+                mobile=c.mobile,
+                phone=c.phone,
                 address=b.address if config.sync_addresses else None,
                 labels=frozenset(b.labels | {config.label_all}),
                 membership_years=frozenset(b.years),
                 is_member=b.is_member,
                 sources=tuple(b.sources),
+                withheld=frozenset(c.withheld),
             )
         )
+    dependants.sort(key=lambda d: (not d.is_member, d.name.casefold()))
     no_contact.sort(key=lambda p: (not p.is_member, p.name.casefold()))
     stats["people"] = len(people)
     stats["members"] = sum(1 for p in people if p.is_member)
     stats["entrants"] = sum(1 for p in people if config.label_entrant in p.labels)
     stats["with_address"] = sum(1 for p in people if p.address)
+    stats["details_withheld"] = sum(len(p.withheld) for p in people)
+    stats["dependants"] = len(dependants)
     stats["no_contact"] = len(no_contact)
     return PullResult(
         organisation=org,
@@ -432,6 +551,7 @@ def pull(client: EventorClient, config: SyncConfig, now: datetime | None = None)
         window_end=window_end,
         events=events,
         people=people,
+        dependants=dependants,
         no_contact=no_contact,
         managed_labels=managed_labels(config, years),
         stats=stats,

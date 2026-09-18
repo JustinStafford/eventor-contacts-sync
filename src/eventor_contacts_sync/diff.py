@@ -14,6 +14,12 @@ JSON report, and executed. Rules:
   in ``clientData`` so that only *its* entry is replaced when Eventor changes;
   anything else on the contact (notes, photo, extra numbers, own labels) is
   passed through untouched. A value missing from Eventor never blanks anything.
+* A detail *withheld* from a person because it belongs to someone else's contact
+  (see ``sources.assign_owners``) is withdrawn: the entry recorded in the sync
+  state is removed. A value Eventor simply no longer has is still never blanked.
+* A *dependant* (every detail belongs to someone else) keeps a bare managed
+  contact: its sync-written details are withdrawn, the managed labels come off
+  and the dependant label goes on, so the stubs can be deleted by hand in one go.
 * Someone who drops out of Eventor loses the managed labels. Nothing is deleted.
 """
 
@@ -28,7 +34,7 @@ from eventor_contacts_sync.config import SyncConfig
 from eventor_contacts_sync.google import MY_CONTACTS
 from eventor_contacts_sync.sources import Address, DesiredPerson, normalise_email, normalise_phone
 
-Action = Literal["create", "adopt", "update", "unchanged"]
+Action = Literal["create", "adopt", "update", "dependant", "unchanged"]
 
 EXTERNAL_ID_TYPE = "eventor"
 STATE_PREFIX = "eventor:"
@@ -139,7 +145,7 @@ class Plan:
 
     @property
     def lapsed(self) -> list[ContactChange]:
-        return [c for c in self.changes if c.desired is None and c.has_writes]
+        return [c for c in self.changes if c.desired is None and c.action == "update"]
 
     def summary(self) -> dict[str, int]:
         writes = [c for c in self.changes if c.has_writes]
@@ -152,10 +158,11 @@ class Plan:
             "updated_contacts": len(self.by_action("update")),
             "unchanged_contacts": len(self.by_action("unchanged")),
             "lapsed_contacts": len(self.lapsed),
+            "dependant_contacts": len(self.by_action("dependant")),
             "label_additions": sum(len(c.labels_add) for c in writes),
             "label_removals": sum(len(c.labels_remove) for c in writes),
             "field_changes": sum(
-                len(c.field_changes) for c in writes if c.action in ("update", "adopt")
+                len(c.field_changes) for c in writes if c.action in ("update", "adopt", "dependant")
             ),
             "possible_duplicates": len(self.possible_duplicates),
             "ambiguous_matches": len(self.ambiguous),
@@ -189,6 +196,18 @@ def _merge_slot(
         return (old, desired)
     items.append(make_item(None))
     return (None, desired)
+
+
+def _withdraw(
+    items: list[dict[str, Any]], last_key: str | None, key_of: Callable[[dict[str, Any]], str]
+) -> dict[str, Any] | None:
+    """Remove the entry the sync wrote last time (found through ``last_key``), if present."""
+    if not last_key:
+        return None
+    for index, item in enumerate(items):
+        if key_of(item) == last_key:
+            return items.pop(index)
+    return None
 
 
 def merge_person(
@@ -228,6 +247,14 @@ def merge_person(
         )
         if change and existing:
             changes["email"] = (change[0] and change[0].get("value"), change[1])
+    elif "email" in desired.withheld:
+        gone = _withdraw(
+            emails,
+            _email_key(state.get("email")) if state.get("email") else None,
+            lambda item: _email_key(item.get("value")),
+        )
+        if gone is not None:
+            changes["email"] = (gone.get("value"), None)
 
     phones = [_clean(p) for p in source.get("phoneNumbers", [])]
     # canonicalForm is dropped by _clean, so key the existing entries off the raw read.
@@ -240,6 +267,14 @@ def merge_person(
         ("phone", desired.phone, "home"),
     ):
         if not value:
+            if slot in desired.withheld:
+                gone = _withdraw(
+                    phones,
+                    phone_key(state.get(slot)) if state.get(slot) else None,
+                    lambda item: raw_phone_keys.get(id(item)) or phone_key(item.get("value")),
+                )
+                if gone is not None:
+                    changes[slot] = (gone.get("value"), None)
             continue
         change = _merge_slot(
             phones,
@@ -294,6 +329,8 @@ def merge_person(
     ):
         if value:
             new_state[slot] = value
+        elif slot in desired.withheld:
+            new_state.pop(slot, None)
     client_data = [
         _clean(c)
         for c in source.get("clientData", [])
@@ -380,6 +417,62 @@ def plan_contact(
     )
 
 
+def plan_dependant(
+    pid: int,
+    contact: dict[str, Any],
+    *,
+    group_names: dict[str, str],
+    managed_labels: frozenset[str],
+    config: SyncConfig,
+) -> ContactChange:
+    """Strip a dependant's managed contact down to a labelled stub (idempotent)."""
+    state = _state(contact)
+    phone_key = _phone_key_factory(config.phone_country_code)
+    body = {k: [_clean(i) for i in contact.get(k, [])] for k in _BODY_FIELDS}
+    body["etag"] = contact.get("etag")
+    body["metadata"] = contact.get("metadata")
+    field_changes: dict[str, tuple[Any, Any]] = {}
+    raw_phone_keys = {
+        id(clean): phone_key(raw.get("canonicalForm") or raw.get("value"))
+        for clean, raw in zip(body["phoneNumbers"], contact.get("phoneNumbers", []), strict=True)
+    }
+    gone = _withdraw(
+        body["emailAddresses"],
+        _email_key(state["email"]) if state.get("email") else None,
+        lambda item: _email_key(item.get("value")),
+    )
+    if gone is not None:
+        field_changes["email"] = (gone.get("value"), None)
+    for slot in ("mobile", "phone"):
+        gone = _withdraw(
+            body["phoneNumbers"],
+            phone_key(state[slot]) if state.get(slot) else None,
+            lambda item: raw_phone_keys.get(id(item)) or phone_key(item.get("value")),
+        )
+        if gone is not None:
+            field_changes[slot] = (gone.get("value"), None)
+    new_state = {k: v for k, v in state.items() if k not in ("email", "mobile", "phone")}
+    if new_state != state:
+        body["clientData"] = [
+            c for c in body["clientData"] if not c.get("key", "").startswith(STATE_PREFIX)
+        ] + [{"key": STATE_PREFIX + k, "value": v} for k, v in sorted(new_state.items())]
+    current = label_names(contact, group_names)
+    labels_add = frozenset({config.label_dependant} - current)
+    labels_remove = frozenset((current & managed_labels) - {config.label_dependant})
+    changed = bool(field_changes or labels_add or labels_remove)
+    return ContactChange(
+        action="dependant" if changed else "unchanged",
+        name=contact_name(contact),
+        person_id=pid,
+        resource_name=contact.get("resourceName"),
+        field_changes=field_changes,
+        labels_add=labels_add,
+        labels_remove=labels_remove,
+        existing=contact,
+        body=body,
+    )
+
+
 def _detail_keys(person: dict[str, Any], phone_key: Callable[[str | None], str]) -> set[str]:
     keys = {"e:" + _email_key(e.get("value")) for e in person.get("emailAddresses", [])}
     keys |= {
@@ -396,6 +489,7 @@ def compute_plan(
     group_names: dict[str, str],
     managed_labels: frozenset[str],
     config: SyncConfig,
+    dependant_ids: frozenset[int] = frozenset(),
 ) -> Plan:
     plan = Plan(changes=[], managed_labels=managed_labels, contacts_total=len(contacts))
     phone_key = _phone_key_factory(config.phone_country_code)
@@ -494,6 +588,17 @@ def compute_plan(
         if resource in seen or any(i in desired_ids for i in eventor_ids(contact)):
             continue
         seen.add(resource)
+        if pid in dependant_ids:
+            change = plan_dependant(
+                pid,
+                contact,
+                group_names=group_names,
+                managed_labels=managed_labels,
+                config=config,
+            )
+            if change.has_writes:
+                plan.changes.append(change)
+            continue
         stale = frozenset(label_names(contact, group_names) & managed_labels)
         if not stale:
             continue

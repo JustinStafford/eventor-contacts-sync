@@ -44,9 +44,9 @@ def _change_detail(change: ContactChange, redact: bool) -> str:
     parts = []
     for field, (old, new) in change.field_changes.items():
         if redact or field == "sync-state":
-            parts.append(field)
+            parts.append(field if new is not None else f"{field} removed")
         else:
-            parts.append(f"{field}: {old or '(none)'} -> {new}")
+            parts.append(f"{field}: {old or '(none)'} -> {new if new is not None else '(removed)'}")
     parts += [f"+{label}" for label in sorted(change.labels_add)]
     parts += [f"-{label}" for label in sorted(change.labels_remove)]
     return "; ".join(parts)
@@ -100,6 +100,12 @@ def render_diff(
     section("Adopted existing contacts", plan.by_action("adopt"), "@")
     section("Updates", [c for c in plan.by_action("update") if c.desired is not None], "~")
     section("Lapsed (managed labels removed, contact kept)", plan.lapsed, "-")
+    section(
+        f"Dependants (details moved to the owner's contact; delete these under the "
+        f"'{config.label_dependant}' label if you like)",
+        plan.by_action("dependant"),
+        "-",
+    )
 
     def exceptions(title: str, rows: list[dict[str, Any]]) -> None:
         if not rows:
@@ -119,6 +125,17 @@ def render_diff(
     exceptions("Ambiguous (several unmanaged contacts match; skipped, merge them in Google)",
                plan.ambiguous)  # fmt: skip
     exceptions("Eventor ID on more than one contact (first one used)", plan.duplicate_ids)
+
+    if pull.dependants:
+        lines.append("")
+        lines.append(
+            f"Dependants sharing every contact detail with someone else ({len(pull.dependants)}; "
+            "no contact of their own)"
+        )
+        for d in pull.dependants:
+            who = "" if redact else f"{d.name} "
+            owner = "" if redact else f"{d.owner_name} "
+            lines.append(f"  . {who}(Eventor #{d.person_id}) -> {owner}(Eventor #{d.owner_id})")
 
     members_missing = [p for p in pull.no_contact if p.is_member]
     if members_missing:
@@ -140,7 +157,8 @@ def render_diff(
     lines.append(
         f"Summary: {s['new_contacts']} new, {s['adopted_contacts']} adopted, "
         f"{s['updated_contacts'] - s['lapsed_contacts']} updated, {s['lapsed_contacts']} lapsed, "
-        f"{s['unchanged_contacts']} unchanged"
+        + (f"{s['dependant_contacts']} dependant stubs, " if s["dependant_contacts"] else "")
+        + f"{s['unchanged_contacts']} unchanged"
         + (f", {s['api_errors']} FAILED" if s["api_errors"] else "")
     )
     return "\n".join(lines)
@@ -210,6 +228,17 @@ def build_report(
         "summary": plan.summary(),
         "changes": [_change_json(c, redact) for c in plan.changes if c.has_writes],
         "exceptions": {
+            "dependants": [
+                {
+                    "person_id": d.person_id,
+                    "name": _name(d.name, redact),
+                    "owner_id": d.owner_id,
+                    "owner_name": _name(d.owner_name, redact),
+                    "is_member": d.is_member,
+                    "sources": list(d.sources),
+                }
+                for d in pull.dependants
+            ],
             "no_contact_details": [
                 {
                     "person_id": p.person_id,

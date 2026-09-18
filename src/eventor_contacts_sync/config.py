@@ -57,6 +57,7 @@ class SyncConfig:
     label_all: str = "Eventor"
     label_member: str = "Member"
     label_entrant: str = "Entrant"
+    label_dependant: str = "Dependant"
     update_names: bool = True
     sync_addresses: bool = True
     adopt_existing: bool = True
@@ -223,6 +224,7 @@ def load_config(
         label_all=_str(env, "SYNC_LABEL_ALL", "Eventor"),
         label_member=_str(env, "SYNC_LABEL_MEMBER", "Member"),
         label_entrant=_str(env, "SYNC_LABEL_ENTRANT", "Entrant"),
+        label_dependant=_str(env, "SYNC_LABEL_DEPENDANT", "Dependant"),
         update_names=_bool(env.get("SYNC_UPDATE_NAMES"), True),
         sync_addresses=_bool(env.get("SYNC_ADDRESSES"), True),
         adopt_existing=_bool(env.get("SYNC_ADOPT_EXISTING"), True),
