@@ -246,6 +246,9 @@ def test_dependant_stub_from_an_earlier_sync_is_cleaned_up_and_the_guard_ignores
     assert "Jo Sample (Eventor #1003) -> Sam Sample (Eventor #1002)" in result.diff_text
     assert result.report["exceptions"]["dependants"][0]["owner_id"] == 1002
     assert result.report["summary"]["dependant_contacts"] == 1
+    assert [c["action"] for c in result.report["changes"] if c["person_id"] == 1003] == [
+        "dependant"
+    ]
     stored = people.contacts["people/child"]
     assert stored["emailAddresses"] == []
     labels = {

@@ -168,7 +168,9 @@ def _change_json(change: ContactChange, redact: bool) -> dict[str, Any]:
     return {
         "person_id": change.person_id,
         "name": _name(change.name, redact),
-        "action": "lapse" if change.desired is None else change.action,
+        "action": "lapse"
+        if change.desired is None and change.action == "update"
+        else change.action,
         "resource_name": change.resource_name,
         "fields": {
             field: {"old": _REDACTED if redact else old, "new": _REDACTED if redact else new}
