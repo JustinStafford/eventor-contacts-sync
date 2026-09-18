@@ -1,6 +1,6 @@
 [project]
 name = "eventor-contacts-sync"
-version = "0.1.0"
+version = "0.2.0"
 description = "Keep Google Contacts in sync with an orienteering club's Eventor members and event entrants."
 readme = "README.md"
 license = "MIT"
